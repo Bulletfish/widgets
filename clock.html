@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<style>
+body {
+  margin:0;
+  font-family: system-ui;
+  background: transparent;
+  display:grid;
+  place-items:center;
+  height:100vh;
+}
+
+.card {
+  background:white;
+  padding:14px 18px;
+  border-radius:12px;
+  box-shadow:0 4px 20px rgba(0,0,0,.08);
+  text-align:center;
+}
+
+.time {
+  font-size:22px;
+  font-weight:600;
+}
+
+.date {
+  font-size:13px;
+  opacity:.6;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <div class="time" id="time"></div>
+  <div class="date" id="date"></div>
+</div>
+
+<script>
+function tick(){
+  const now = new Date();
+
+  time.textContent =
+    now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+
+  date.textContent =
+    now.toLocaleDateString([], {weekday:'long', day:'numeric', month:'long'});
+}
+
+tick();
+setInterval(tick,1000);
+</script>
+
+</body>
+</html>
