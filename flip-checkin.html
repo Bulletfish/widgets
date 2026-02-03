@@ -5,31 +5,53 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Flip Clock + Check-in</title>
 
+  <!-- Flip-clock friendly font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@600;700&display=swap" rel="stylesheet">
+
   <style>
     :root{
       --bg: transparent;
-      --panel: rgba(255,255,255,0.92);
-      --panelEdge: rgba(0,0,0,0.08);
-      --text: #111;
-      --muted: rgba(0,0,0,0.6);
-      --shadow: 0 20px 50px rgba(0,0,0,0.12);
+
+      --card: rgba(255,255,255,0.92);
+      --edge: rgba(0,0,0,0.10);
+      --hinge: rgba(0,0,0,0.10);
+
+      --text: #0b0b0b;
+      --muted: rgba(0,0,0,0.55);
+
+      --shadow: 0 18px 45px rgba(0,0,0,0.12);
+
       --btnBg: rgba(255,255,255,0.92);
-      --btnBorder: rgba(0,0,0,0.12);
-      --btnText: #111;
+      --btnBorder: rgba(0,0,0,0.16);
+      --btnText: #0b0b0b;
       --btnHover: rgba(255,255,255,0.98);
+
+      /* Size controls */
+      --digitW: clamp(120px, 16vw, 230px);
+      --digitH: clamp(160px, 22vw, 300px);
+      --radius: clamp(18px, 2.2vw, 26px);
+      --gap: clamp(12px, 1.8vw, 18px);
+      --colon: clamp(42px, 6vw, 86px);
+      --num: clamp(92px, 12vw, 170px);
     }
 
     @media (prefers-color-scheme: dark){
       :root{
-        --panel: rgba(24,24,24,0.92);
-        --panelEdge: rgba(255,255,255,0.10);
-        --text: rgba(255,255,255,0.95);
-        --muted: rgba(255,255,255,0.65);
-        --shadow: 0 20px 50px rgba(0,0,0,0.45);
-        --btnBg: rgba(24,24,24,0.92);
-        --btnBorder: rgba(255,255,255,0.14);
-        --btnText: rgba(255,255,255,0.95);
-        --btnHover: rgba(30,30,30,0.96);
+        --card: rgba(20,20,20,0.92);
+        --edge: rgba(255,255,255,0.12);
+        --hinge: rgba(255,255,255,0.12);
+
+        --text: rgba(255,255,255,0.96);
+        --muted: rgba(255,255,255,0.62);
+
+        --shadow: 0 24px 60px rgba(0,0,0,0.55);
+
+        --btnBg: rgba(20,20,20,0.92);
+        --btnBorder: rgba(255,255,255,0.18);
+        --btnText: rgba(255,255,255,0.96);
+        --btnHover: rgba(26,26,26,0.96);
       }
     }
 
@@ -38,18 +60,18 @@
       height:100%;
       margin:0;
       background: var(--bg);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
       color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
     }
 
-    /* Lean into whitespace */
+    /* Intentional whitespace */
     .stage{
       width:100%;
       height:100%;
       display:flex;
       align-items:center;
       justify-content:center;
-      padding:24px;
+      padding: 26px;
       box-sizing:border-box;
     }
 
@@ -57,7 +79,7 @@
       display:flex;
       flex-direction:column;
       align-items:center;
-      gap:18px;
+      gap: 18px;
       user-select:none;
     }
 
@@ -65,32 +87,46 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:18px;
+      gap: var(--gap);
     }
 
     .colon{
-      font-size: clamp(48px, 7vw, 120px);
+      font-family: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: var(--colon);
       line-height: 1;
-      opacity: 0.65;
-      transform: translateY(-4px);
+      opacity: 0.6;
+      transform: translateY(-2px);
     }
 
-    /* Flip digit panel */
+    /* Digit container */
     .digit{
-      position:relative;
-      width: clamp(120px, 18vw, 260px);
-      height: clamp(160px, 22vw, 320px);
-      perspective: 1000px;
+      width: var(--digitW);
+      height: var(--digitH);
+      position: relative;
+      perspective: 1200px;
       filter: drop-shadow(var(--shadow));
     }
 
-    .card{
+    .shell{
       position:absolute;
       inset:0;
-      background: var(--panel);
-      border: 1px solid var(--panelEdge);
-      border-radius: 22px;
+      border-radius: var(--radius);
+      background: var(--card);
+      border: 1px solid var(--edge);
       overflow:hidden;
+    }
+
+    /* subtle vignette like classic flip cards */
+    .shell::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(120% 90% at 50% 18%, rgba(255,255,255,0.12), rgba(255,255,255,0) 55%),
+        radial-gradient(120% 90% at 50% 90%, rgba(0,0,0,0.06), rgba(0,0,0,0) 60%);
+      pointer-events:none;
+      mix-blend-mode: normal;
+      opacity: 0.9;
     }
 
     .hinge{
@@ -98,27 +134,14 @@
       left:0; right:0;
       top:50%;
       height:1px;
-      background: var(--panelEdge);
-      opacity: 0.8;
+      background: var(--hinge);
+      opacity: 0.9;
       transform: translateY(-0.5px);
       pointer-events:none;
     }
 
-    .value{
-      position:absolute;
-      inset:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      font-variant-numeric: tabular-nums;
-      font-size: clamp(88px, 12vw, 190px);
-      line-height: 1;
-    }
-
-    /* Flip layers */
-    .top, .bottom, .flipTop, .flipBottom{
+    /* Each half */
+    .half{
       position:absolute;
       left:0; right:0;
       height:50%;
@@ -126,59 +149,73 @@
       display:flex;
       align-items:center;
       justify-content:center;
+      font-family: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
-      letter-spacing: 0.02em;
-      font-size: clamp(88px, 12vw, 190px);
+      letter-spacing: -0.02em;
+      font-size: var(--num);
       line-height: 1;
-      backface-visibility: hidden;
+      backface-visibility:hidden;
+    }
+
+    /* The number itself is perfectly centred in the full card, then clipped by the half */
+    .num{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform: translate(-50%, -50%);
+      will-change: transform;
     }
 
     .top{
       top:0;
-      background: linear-gradient(to bottom, rgba(255,255,255,0.10), rgba(0,0,0,0.03));
+      background: linear-gradient(to bottom, rgba(255,255,255,0.10), rgba(0,0,0,0.04));
     }
 
     .bottom{
       bottom:0;
       background: linear-gradient(to top, rgba(255,255,255,0.06), rgba(0,0,0,0.06));
-      align-items: flex-start;
-      padding-top: 0.02em;
-      box-sizing: border-box;
     }
 
-    .top span, .bottom span, .flipTop span, .flipBottom span{
-      transform: translateY(-2px);
-    }
-
-    .bottom span{
-      transform: translateY(-50%);
-    }
-
-    /* Animated flipping pieces */
+    /* Animated halves */
     .flipTop{
       top:0;
       transform-origin: bottom;
       transform: rotateX(0deg);
-      background: linear-gradient(to bottom, rgba(255,255,255,0.10), rgba(0,0,0,0.03));
+      z-index: 4;
     }
 
     .flipBottom{
       bottom:0;
       transform-origin: top;
       transform: rotateX(90deg);
-      background: linear-gradient(to top, rgba(255,255,255,0.06), rgba(0,0,0,0.06));
-      align-items: flex-start;
-      padding-top: 0.02em;
-      box-sizing: border-box;
+      z-index: 3;
     }
 
-    .digit.flipping .flipTop{
-      animation: flipTop 420ms ease-in forwards;
+    /* add a bit of depth during flip */
+    .flipTop::after, .flipBottom::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      opacity:0;
+      transition: opacity 120ms ease;
     }
 
-    .digit.flipping .flipBottom{
-      animation: flipBottom 420ms ease-out forwards;
+    .flipTop::after{
+      background: linear-gradient(to bottom, rgba(0,0,0,0.18), rgba(0,0,0,0));
+    }
+
+    .flipBottom::after{
+      background: linear-gradient(to top, rgba(0,0,0,0.18), rgba(0,0,0,0));
+    }
+
+    .digit.flipping .flipTop{ animation: flipTop 420ms ease-in forwards; }
+    .digit.flipping .flipBottom{ animation: flipBottom 420ms ease-out forwards; }
+
+    .digit.flipping .flipTop::after,
+    .digit.flipping .flipBottom::after{
+      opacity: 1;
     }
 
     @keyframes flipTop{
@@ -197,7 +234,7 @@
       flex-direction:column;
       align-items:center;
       gap:10px;
-      min-height: 62px;
+      min-height: 66px;
     }
 
     button{
@@ -206,14 +243,18 @@
       background: var(--btnBg);
       color: var(--btnText);
       border-radius: 999px;
-      padding: 10px 14px;
-      font-weight: 600;
+      padding: 10px 16px;
+      font-weight: 650;
       letter-spacing: 0.01em;
       cursor:pointer;
-      transition: transform 120ms ease, background 120ms ease;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
     }
 
-    button:hover{ background: var(--btnHover); }
+    button:hover{
+      background: var(--btnHover);
+      border-color: color-mix(in srgb, var(--btnBorder) 70%, transparent);
+    }
+
     button:active{ transform: scale(0.98); }
 
     .lastSeen{
@@ -244,7 +285,7 @@
   </div>
 
 <script>
-  // ---- Helpers ----
+  // ---------- Helpers ----------
   function pad2(n){ return String(n).padStart(2, "0"); }
 
   function sameDay(a, b){
@@ -269,22 +310,22 @@
     return `Last seen: ${date} ${time}`;
   }
 
-  // Optional: allow unique keys per embed via URL: ?id=todenham
+  // Optional: unique per page/client via URL: ?id=todenham
   const params = new URLSearchParams(location.search);
   const widgetId = params.get("id") || "default";
   const storageKey = `notion_flip_clock_checkin_${widgetId}`;
 
-  // ---- Flip Digit rendering ----
+  // ---------- Flip Digit ----------
   function createDigit(el, initialChar){
     el.innerHTML = `
-      <div class="card"></div>
+      <div class="shell"></div>
       <div class="hinge"></div>
 
-      <div class="top"><span>${initialChar}</span></div>
-      <div class="bottom"><span>${initialChar}</span></div>
+      <div class="half top"><div class="num">${initialChar}</div></div>
+      <div class="half bottom"><div class="num">${initialChar}</div></div>
 
-      <div class="flipTop"><span>${initialChar}</span></div>
-      <div class="flipBottom"><span>${initialChar}</span></div>
+      <div class="half flipTop"><div class="num">${initialChar}</div></div>
+      <div class="half flipBottom"><div class="num">${initialChar}</div></div>
     `;
     el.dataset.current = initialChar;
   }
@@ -293,33 +334,33 @@
     const current = el.dataset.current;
     if (current === nextChar) return;
 
-    const top = el.querySelector(".top span");
-    const bottom = el.querySelector(".bottom span");
-    const flipTop = el.querySelector(".flipTop span");
-    const flipBottom = el.querySelector(".flipBottom span");
+    const topNum = el.querySelector(".top .num");
+    const bottomNum = el.querySelector(".bottom .num");
+    const flipTopNum = el.querySelector(".flipTop .num");
+    const flipBottomNum = el.querySelector(".flipBottom .num");
 
-    // Set static current
-    top.textContent = current;
-    bottom.textContent = current;
+    // Static halves show current until animation completes
+    topNum.textContent = current;
+    bottomNum.textContent = current;
 
-    // Set animated next/current
-    flipTop.textContent = current;
-    flipBottom.textContent = nextChar;
+    // Animated: flipTop shows current -> flips away
+    //          flipBottom starts hidden at 90deg -> flips to next
+    flipTopNum.textContent = current;
+    flipBottomNum.textContent = nextChar;
 
     el.classList.remove("flipping");
-    void el.offsetWidth; // reflow to restart animation
+    void el.offsetWidth; // reflow restart animation
     el.classList.add("flipping");
 
-    // After flip, lock in next
     setTimeout(() => {
-      top.textContent = nextChar;
-      bottom.textContent = nextChar;
+      topNum.textContent = nextChar;
+      bottomNum.textContent = nextChar;
       el.dataset.current = nextChar;
       el.classList.remove("flipping");
     }, 430);
   }
 
-  // ---- Init digits ----
+  // ---------- Init ----------
   const els = {
     h1: document.getElementById("h1"),
     h2: document.getElementById("h2"),
@@ -341,10 +382,9 @@
   }
 
   tick();
-  // Update often enough to catch minute change promptly
   setInterval(tick, 1000);
 
-  // ---- Check-in ----
+  // ---------- Check-in ----------
   const lastSeenEl = document.getElementById("lastSeen");
   const btn = document.getElementById("checkInBtn");
 
