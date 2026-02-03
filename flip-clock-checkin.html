@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flip Clock Check-In</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #1a1a1a;
+            --text-primary: #00ffcc;
+            --text-secondary: #666666;
+            --accent: #00ffcc;
+            --flip-front: #0a0a0a;
+            --flip-back: #1a1a1a;
+            --shadow: rgba(0, 255, 204, 0.3);
+            --glow: rgba(0, 255, 204, 0.5);
+        }
+
+        body.light-mode {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --text-primary: #000000;
+            --text-secondary: #999999;
+            --accent: #000000;
+            --flip-front: #ffffff;
+            --flip-back: #f5f5f5;
+            --shadow: rgba(0, 0, 0, 0.15);
+            --glow: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            transition: background 0.5s ease, color 0.5s ease;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, var(--glow) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, var(--accent) 0%, transparent 50%);
+            opacity: 0.1;
+            animation: pulseGlow 8s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.1; }
+            50% { opacity: 0.2; }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 2rem;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--bg-secondary);
+            border: 2px solid var(--text-primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px var(--shadow);
+            z-index: 100;
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(180deg) scale(1.1);
+            box-shadow: 0 6px 30px var(--glow);
+        }
+
+        .theme-toggle svg {
+            width: 24px;
+            height: 24px;
+            fill: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .clock-container {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 2.5rem;
+            animation: fadeIn 1s ease-out 0.2s both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .flip-unit {
+            perspective: 1000px;
+            position: relative;
+        }
+
+        .flip-card {
+            position: relative;
+            width: 80px;
+            height: 100px;
+            font-family: 'Orbitron', monospace;
+            font-size: 5.5rem;
+            font-weight: 900;
+            color: var(--text-primary);
+            line-height: 1;
+        }
+
+        .flip-card-top,
+        .flip-card-bottom,
+        .flip-card-back-top,
+        .flip-card-back-bottom {
+            position: absolute;
+            width: 100%;
+            height: 50%;
+            overflow: hidden;
+            background: var(--flip-front);
+            border: 2px solid var(--text-primary);
+            box-shadow: 0 2px 10px var(--shadow);
+        }
+
+        .flip-card-top {
+            top: 0;
+            border-radius: 8px 8px 0 0;
+            border-bottom: 2px solid var(--bg-primary);
+        }
+
+        .flip-card-top span {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .flip-card-bottom {
+            bottom: 0;
+            border-radius: 0 0 8px 8px;
+            border-top: 2px solid var(--bg-primary);
+        }
+
+        .flip-card-bottom span {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .flip-card-back-top,
+        .flip-card-back-bottom {
+            background: var(--flip-back);
+        }
+
+        .flip-card-back-top {
+            top: 0;
+            border-radius: 8px 8px 0 0;
+            border-bottom: 2px solid var(--bg-primary);
+            transform-origin: bottom;
+            transform: rotateX(0deg);
+        }
+
+        .flip-card-back-top span {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .flip-card-back-bottom {
+            bottom: 0;
+            border-radius: 0 0 8px 8px;
+            border-top: 2px solid var(--bg-primary);
+            transform-origin: top;
+            transform: rotateX(90deg);
+        }
+
+        .flip-card-back-bottom span {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .flip-card.flipping .flip-card-back-top {
+            animation: flipTop 0.6s ease-in-out;
+        }
+
+        .flip-card.flipping .flip-card-back-bottom {
+            animation: flipBottom 0.6s ease-in-out;
+        }
+
+        @keyframes flipTop {
+            0% { transform: rotateX(0deg); }
+            100% { transform: rotateX(-90deg); }
+        }
+
+        @keyframes flipBottom {
+            0% { transform: rotateX(90deg); }
+            100% { transform: rotateX(0deg); }
+        }
+
+        .separator {
+            font-family: 'Orbitron', monospace;
+            font-size: 5.5rem;
+            font-weight: 900;
+            line-height: 100px;
+            color: var(--accent);
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        .check-in-section {
+            animation: fadeIn 1s ease-out 0.4s both;
+        }
+
+        .check-in-btn {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            border: none;
+            padding: 1rem 3rem;
+            font-family: 'Orbitron', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px var(--glow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .check-in-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .check-in-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .check-in-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--glow);
+        }
+
+        .check-in-btn:active {
+            transform: translateY(0);
+        }
+
+        .check-in-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .last-seen {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border: 2px solid var(--text-primary);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            box-shadow: 0 4px 15px var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .last-seen.updated {
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .last-seen-label {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.3rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+        }
+
+        .last-seen-time {
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            color: var(--accent);
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 480px) {
+            .flip-card {
+                width: 65px;
+                height: 85px;
+                font-size: 4.5rem;
+            }
+
+            .flip-card-top span,
+            .flip-card-bottom span,
+            .flip-card-back-top span,
+            .flip-card-back-bottom span {
+                height: 85px;
+            }
+
+            .separator {
+                font-size: 4.5rem;
+                line-height: 85px;
+            }
+
+            .check-in-btn {
+                padding: 0.875rem 2rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" aria-label="Toggle theme">
+        <svg class="sun-icon" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="5"/>
+            <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1m17.66-5.66l-4.24 4.24m-6.84 0L2.34 6.34m15.32 11.32l-4.24-4.24m-6.84 0l-4.24 4.24"/>
+        </svg>
+        <svg class="moon-icon" style="display: none;" viewBox="0 0 24 24">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+    </button>
+
+    <div class="container">
+        <div class="clock-container">
+            <div class="flip-unit">
+                <div class="flip-card" id="hour-tens">
+                    <div class="flip-card-top"><span>0</span></div>
+                    <div class="flip-card-bottom"><span>0</span></div>
+                    <div class="flip-card-back-top"><span>0</span></div>
+                    <div class="flip-card-back-bottom"><span>0</span></div>
+                </div>
+                <div class="label">Hours</div>
+            </div>
+            
+            <div class="flip-unit">
+                <div class="flip-card" id="hour-ones">
+                    <div class="flip-card-top"><span>0</span></div>
+                    <div class="flip-card-bottom"><span>0</span></div>
+                    <div class="flip-card-back-top"><span>0</span></div>
+                    <div class="flip-card-back-bottom"><span>0</span></div>
+                </div>
+            </div>
+            
+            <div class="separator">:</div>
+            
+            <div class="flip-unit">
+                <div class="flip-card" id="min-tens">
+                    <div class="flip-card-top"><span>0</span></div>
+                    <div class="flip-card-bottom"><span>0</span></div>
+                    <div class="flip-card-back-top"><span>0</span></div>
+                    <div class="flip-card-back-bottom"><span>0</span></div>
+                </div>
+                <div class="label">Minutes</div>
+            </div>
+            
+            <div class="flip-unit">
+                <div class="flip-card" id="min-ones">
+                    <div class="flip-card-top"><span>0</span></div>
+                    <div class="flip-card-bottom"><span>0</span></div>
+                    <div class="flip-card-back-top"><span>0</span></div>
+                    <div class="flip-card-back-bottom"><span>0</span></div>
+                </div>
+            </div>
+            
+
+        </div>
+
+        <div class="check-in-section">
+            <button class="check-in-btn" id="check-in-btn">
+                <span>Check In</span>
+            </button>
+            
+            <div class="last-seen" id="last-seen">
+                <div class="last-seen-label">Last Seen</div>
+                <div class="last-seen-time" id="last-seen-time">Never</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.querySelector('.theme-toggle');
+        const sunIcon = document.querySelector('.sun-icon');
+        const moonIcon = document.querySelector('.moon-icon');
+        const body = document.body;
+
+        // Check for saved theme preference or default to dark
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+        if (currentTheme === 'light') {
+            body.classList.add('light-mode');
+            sunIcon.style.display = 'none';
+            moonIcon.style.display = 'block';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('light-mode');
+            const isLight = body.classList.contains('light-mode');
+            
+            sunIcon.style.display = isLight ? 'none' : 'block';
+            moonIcon.style.display = isLight ? 'block' : 'none';
+            
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        });
+
+        // Flip clock functionality
+        class FlipClock {
+            constructor() {
+                this.hourTens = document.getElementById('hour-tens');
+                this.hourOnes = document.getElementById('hour-ones');
+                this.minTens = document.getElementById('min-tens');
+                this.minOnes = document.getElementById('min-ones');
+                
+                this.previousTime = { h1: 0, h2: 0, m1: 0, m2: 0 };
+                
+                this.updateClock();
+                setInterval(() => this.updateClock(), 1000);
+            }
+
+            updateClock() {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+
+                const currentTime = {
+                    h1: parseInt(hours[0]),
+                    h2: parseInt(hours[1]),
+                    m1: parseInt(minutes[0]),
+                    m2: parseInt(minutes[1])
+                };
+
+                this.flipIfChanged(this.hourTens, this.previousTime.h1, currentTime.h1);
+                this.flipIfChanged(this.hourOnes, this.previousTime.h2, currentTime.h2);
+                this.flipIfChanged(this.minTens, this.previousTime.m1, currentTime.m1);
+                this.flipIfChanged(this.minOnes, this.previousTime.m2, currentTime.m2);
+
+                this.previousTime = currentTime;
+            }
+
+            flipIfChanged(card, oldValue, newValue) {
+                if (oldValue !== newValue) {
+                    this.flip(card, newValue);
+                }
+            }
+
+            flip(card, newValue) {
+                const top = card.querySelector('.flip-card-top span');
+                const bottom = card.querySelector('.flip-card-bottom span');
+                const backTop = card.querySelector('.flip-card-back-top span');
+                const backBottom = card.querySelector('.flip-card-back-bottom span');
+
+                backTop.textContent = newValue;
+                backBottom.textContent = newValue;
+
+                card.classList.add('flipping');
+
+                setTimeout(() => {
+                    top.textContent = newValue;
+                    bottom.textContent = newValue;
+                    card.classList.remove('flipping');
+                }, 600);
+            }
+        }
+
+        // Check-in functionality
+        const checkInBtn = document.getElementById('check-in-btn');
+        const lastSeenDiv = document.getElementById('last-seen');
+        const lastSeenTime = document.getElementById('last-seen-time');
+
+        function formatLastSeen(timestamp) {
+            const now = new Date();
+            const then = new Date(timestamp);
+            
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const thenDate = new Date(then.getFullYear(), then.getMonth(), then.getDate());
+            
+            const hours = String(then.getHours()).padStart(2, '0');
+            const minutes = String(then.getMinutes()).padStart(2, '0');
+            const timeStr = `${hours}:${minutes}`;
+            
+            if (thenDate.getTime() === today.getTime()) {
+                return `Today at ${timeStr}`;
+            } else if (thenDate.getTime() === today.getTime() - 86400000) {
+                return `Yesterday at ${timeStr}`;
+            } else {
+                const day = String(then.getDate()).padStart(2, '0');
+                const month = String(then.getMonth() + 1).padStart(2, '0');
+                const year = then.getFullYear();
+                return `${day}/${month}/${year} at ${timeStr}`;
+            }
+        }
+
+        function loadLastSeen() {
+            const lastCheckIn = localStorage.getItem('lastCheckIn');
+            if (lastCheckIn) {
+                lastSeenTime.textContent = formatLastSeen(parseInt(lastCheckIn));
+            }
+        }
+
+        checkInBtn.addEventListener('click', () => {
+            const now = Date.now();
+            localStorage.setItem('lastCheckIn', now);
+            lastSeenTime.textContent = formatLastSeen(now);
+            
+            lastSeenDiv.classList.add('updated');
+            setTimeout(() => lastSeenDiv.classList.remove('updated'), 500);
+        });
+
+        // Initialize
+        new FlipClock();
+        loadLastSeen();
+    </script>
+</body>
+</html>
