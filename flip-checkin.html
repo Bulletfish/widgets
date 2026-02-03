@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Flip Clock + Check-in</title>
+
+  <style>
+    :root{
+      --bg: transparent;
+      --panel: rgba(255,255,255,0.92);
+      --panelEdge: rgba(0,0,0,0.08);
+      --text: #111;
+      --muted: rgba(0,0,0,0.6);
+      --shadow: 0 20px 50px rgba(0,0,0,0.12);
+      --btnBg: rgba(255,255,255,0.92);
+      --btnBorder: rgba(0,0,0,0.12);
+      --btnText: #111;
+      --btnHover: rgba(255,255,255,0.98);
+    }
+
+    @media (prefers-color-scheme: dark){
+      :root{
+        --panel: rgba(24,24,24,0.92);
+        --panelEdge: rgba(255,255,255,0.10);
+        --text: rgba(255,255,255,0.95);
+        --muted: rgba(255,255,255,0.65);
+        --shadow: 0 20px 50px rgba(0,0,0,0.45);
+        --btnBg: rgba(24,24,24,0.92);
+        --btnBorder: rgba(255,255,255,0.14);
+        --btnText: rgba(255,255,255,0.95);
+        --btnHover: rgba(30,30,30,0.96);
+      }
+    }
+
+    html, body{
+      width:100%;
+      height:100%;
+      margin:0;
+      background: var(--bg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color: var(--text);
+    }
+
+    /* Lean into whitespace */
+    .stage{
+      width:100%;
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      box-sizing:border-box;
+    }
+
+    .wrap{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:18px;
+      user-select:none;
+    }
+
+    .clockRow{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:18px;
+    }
+
+    .colon{
+      font-size: clamp(48px, 7vw, 120px);
+      line-height: 1;
+      opacity: 0.65;
+      transform: translateY(-4px);
+    }
+
+    /* Flip digit panel */
+    .digit{
+      position:relative;
+      width: clamp(120px, 18vw, 260px);
+      height: clamp(160px, 22vw, 320px);
+      perspective: 1000px;
+      filter: drop-shadow(var(--shadow));
+    }
+
+    .card{
+      position:absolute;
+      inset:0;
+      background: var(--panel);
+      border: 1px solid var(--panelEdge);
+      border-radius: 22px;
+      overflow:hidden;
+    }
+
+    .hinge{
+      position:absolute;
+      left:0; right:0;
+      top:50%;
+      height:1px;
+      background: var(--panelEdge);
+      opacity: 0.8;
+      transform: translateY(-0.5px);
+      pointer-events:none;
+    }
+
+    .value{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      font-variant-numeric: tabular-nums;
+      font-size: clamp(88px, 12vw, 190px);
+      line-height: 1;
+    }
+
+    /* Flip layers */
+    .top, .bottom, .flipTop, .flipBottom{
+      position:absolute;
+      left:0; right:0;
+      height:50%;
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+      font-size: clamp(88px, 12vw, 190px);
+      line-height: 1;
+      backface-visibility: hidden;
+    }
+
+    .top{
+      top:0;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.10), rgba(0,0,0,0.03));
+    }
+
+    .bottom{
+      bottom:0;
+      background: linear-gradient(to top, rgba(255,255,255,0.06), rgba(0,0,0,0.06));
+      align-items: flex-start;
+      padding-top: 0.02em;
+      box-sizing: border-box;
+    }
+
+    .top span, .bottom span, .flipTop span, .flipBottom span{
+      transform: translateY(-2px);
+    }
+
+    .bottom span{
+      transform: translateY(-50%);
+    }
+
+    /* Animated flipping pieces */
+    .flipTop{
+      top:0;
+      transform-origin: bottom;
+      transform: rotateX(0deg);
+      background: linear-gradient(to bottom, rgba(255,255,255,0.10), rgba(0,0,0,0.03));
+    }
+
+    .flipBottom{
+      bottom:0;
+      transform-origin: top;
+      transform: rotateX(90deg);
+      background: linear-gradient(to top, rgba(255,255,255,0.06), rgba(0,0,0,0.06));
+      align-items: flex-start;
+      padding-top: 0.02em;
+      box-sizing: border-box;
+    }
+
+    .digit.flipping .flipTop{
+      animation: flipTop 420ms ease-in forwards;
+    }
+
+    .digit.flipping .flipBottom{
+      animation: flipBottom 420ms ease-out forwards;
+    }
+
+    @keyframes flipTop{
+      0%   { transform: rotateX(0deg); }
+      100% { transform: rotateX(-90deg); }
+    }
+
+    @keyframes flipBottom{
+      0%   { transform: rotateX(90deg); }
+      100% { transform: rotateX(0deg); }
+    }
+
+    /* Controls */
+    .controls{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:10px;
+      min-height: 62px;
+    }
+
+    button{
+      appearance:none;
+      border: 1px solid var(--btnBorder);
+      background: var(--btnBg);
+      color: var(--btnText);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      cursor:pointer;
+      transition: transform 120ms ease, background 120ms ease;
+    }
+
+    button:hover{ background: var(--btnHover); }
+    button:active{ transform: scale(0.98); }
+
+    .lastSeen{
+      font-size: 13px;
+      color: var(--muted);
+      text-align:center;
+      max-width: 520px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="stage">
+    <div class="wrap">
+      <div class="clockRow" aria-label="Clock">
+        <div class="digit" id="h1"></div>
+        <div class="digit" id="h2"></div>
+        <div class="colon">:</div>
+        <div class="digit" id="m1"></div>
+        <div class="digit" id="m2"></div>
+      </div>
+
+      <div class="controls">
+        <button id="checkInBtn" type="button">Check in</button>
+        <div class="lastSeen" id="lastSeen">Last seen: not checked in yet</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ---- Helpers ----
+  function pad2(n){ return String(n).padStart(2, "0"); }
+
+  function sameDay(a, b){
+    return a.getFullYear() === b.getFullYear()
+      && a.getMonth() === b.getMonth()
+      && a.getDate() === b.getDate();
+  }
+
+  function formatLastSeen(ts){
+    const now = new Date();
+    const d = new Date(ts);
+
+    const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+
+    if (sameDay(d, now)) return `Last seen: today ${time}`;
+    if (sameDay(d, yesterday)) return `Last seen: yesterday ${time}`;
+
+    const date = d.toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" });
+    return `Last seen: ${date} ${time}`;
+  }
+
+  // Optional: allow unique keys per embed via URL: ?id=todenham
+  const params = new URLSearchParams(location.search);
+  const widgetId = params.get("id") || "default";
+  const storageKey = `notion_flip_clock_checkin_${widgetId}`;
+
+  // ---- Flip Digit rendering ----
+  function createDigit(el, initialChar){
+    el.innerHTML = `
+      <div class="card"></div>
+      <div class="hinge"></div>
+
+      <div class="top"><span>${initialChar}</span></div>
+      <div class="bottom"><span>${initialChar}</span></div>
+
+      <div class="flipTop"><span>${initialChar}</span></div>
+      <div class="flipBottom"><span>${initialChar}</span></div>
+    `;
+    el.dataset.current = initialChar;
+  }
+
+  function setDigit(el, nextChar){
+    const current = el.dataset.current;
+    if (current === nextChar) return;
+
+    const top = el.querySelector(".top span");
+    const bottom = el.querySelector(".bottom span");
+    const flipTop = el.querySelector(".flipTop span");
+    const flipBottom = el.querySelector(".flipBottom span");
+
+    // Set static current
+    top.textContent = current;
+    bottom.textContent = current;
+
+    // Set animated next/current
+    flipTop.textContent = current;
+    flipBottom.textContent = nextChar;
+
+    el.classList.remove("flipping");
+    void el.offsetWidth; // reflow to restart animation
+    el.classList.add("flipping");
+
+    // After flip, lock in next
+    setTimeout(() => {
+      top.textContent = nextChar;
+      bottom.textContent = nextChar;
+      el.dataset.current = nextChar;
+      el.classList.remove("flipping");
+    }, 430);
+  }
+
+  // ---- Init digits ----
+  const els = {
+    h1: document.getElementById("h1"),
+    h2: document.getElementById("h2"),
+    m1: document.getElementById("m1"),
+    m2: document.getElementById("m2"),
+  };
+
+  Object.values(els).forEach(el => createDigit(el, "0"));
+
+  function tick(){
+    const now = new Date();
+    const hh = pad2(now.getHours());
+    const mm = pad2(now.getMinutes());
+
+    setDigit(els.h1, hh[0]);
+    setDigit(els.h2, hh[1]);
+    setDigit(els.m1, mm[0]);
+    setDigit(els.m2, mm[1]);
+  }
+
+  tick();
+  // Update often enough to catch minute change promptly
+  setInterval(tick, 1000);
+
+  // ---- Check-in ----
+  const lastSeenEl = document.getElementById("lastSeen");
+  const btn = document.getElementById("checkInBtn");
+
+  function refreshLastSeen(){
+    const ts = localStorage.getItem(storageKey);
+    lastSeenEl.textContent = ts ? formatLastSeen(Number(ts)) : "Last seen: not checked in yet";
+  }
+
+  btn.addEventListener("click", () => {
+    const ts = Date.now();
+    localStorage.setItem(storageKey, String(ts));
+    refreshLastSeen();
+  });
+
+  refreshLastSeen();
+</script>
+</body>
+</html>
