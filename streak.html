@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        :root {
+            --bg: transparent;
+            --accent: #00ffcc; /* Default Neon Teal */
+            --off: rgba(150, 150, 150, 0.2);
+            --text: #37352f;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root { --text: #d4d4d4; --off: rgba(255, 255, 255, 0.1); }
+        }
+
+        body { 
+            margin: 0; font-family: -apple-system, system-ui, sans-serif;
+            background: var(--bg); color: var(--text);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; overflow: hidden;
+        }
+
+        .header { font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; opacity: 0.6; }
+
+        .grid { display: flex; gap: 8px; }
+
+        .day {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: var(--off); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: bold; transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .day.active {
+            background: var(--accent); color: white;
+            box-shadow: 0 0 15px var(--accent);
+            border-color: rgba(255,255,255,0.3);
+        }
+
+        .day:hover { transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+
+    <div class="header" id="habit-name">DAILY_HABIT</div>
+    <div class="grid" id="streak-grid">
+        <div class="day" onclick="toggle(0)">M</div>
+        <div class="day" onclick="toggle(1)">T</div>
+        <div class="day" onclick="toggle(2)">W</div>
+        <div class="day" onclick="toggle(3)">T</div>
+        <div class="day" onclick="toggle(4)">F</div>
+        <div class="day" onclick="toggle(5)">S</div>
+        <div class="day" onclick="toggle(6)">S</div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const storageKey = 'streak_' + (params.get('id') || 'default');
+        
+        // Customization
+        document.getElementById('habit-name').innerText = params.get('label') || 'ROUTINE';
+        if(params.get('c')) document.documentElement.style.setProperty('--accent', '#' + params.get('c'));
+
+        // Persistence Logic
+        let state = JSON.parse(localStorage.getItem(storageKey)) || [0,0,0,0,0,0,0];
+        const days = document.querySelectorAll('.day');
+
+        function updateUI() {
+            state.forEach((val, i) => {
+                days[i].className = val ? 'day active' : 'day';
+            });
+            localStorage.setItem(storageKey, JSON.stringify(state));
+        }
+
+        window.toggle = (i) => {
+            state[i] = state[i] ? 0 : 1;
+            updateUI();
+        };
+
+        updateUI();
+    </script>
+</body>
+</html>
